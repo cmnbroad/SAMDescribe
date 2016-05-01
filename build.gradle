@@ -1,0 +1,36 @@
+group 'SAMDescribe'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+  // configuration for JARs that need to be included in the final packaging
+  includeInJar
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+    includeInJar 'com.github.samtools:htsjdk:2.2.4'
+    configurations.compile.extendsFrom(configurations.includeInJar)
+}
+
+jar {
+  manifest {
+    attributes(
+      'Main-Class': 'SAMDescribe.SAMAnalyzer',
+      'Class-Path': configurations.compile.collect { it.getName() }.join(' '))
+  }
+  // import all dependencies into the Jar so that it can be run easily
+  from {
+    configurations.includeInJar.collect {
+      it.isDirectory() ? it : zipTree(it)
+    }
+  }
+}
+
