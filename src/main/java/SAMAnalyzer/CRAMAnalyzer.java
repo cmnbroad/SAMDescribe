@@ -74,7 +74,7 @@ public class CRAMAnalyzer extends SAMAnalyzer {
      *
      */
     public void analyzeCRAMContainer(Container container, int containerCount) {
-        emitln("\nContainer #" + containerCount);
+        emitln("\nContainer #" + containerCount + ": " + container.toString());
         int sliceCount = 0;
         for (Slice slice : container.slices) {
             analyzeCRAMSlice(slice, ++sliceCount);
