@@ -10,13 +10,14 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.math.BigInteger;
 
 /**
  * Analyzer for CRAM files. Displays metadata for each CRAM container,
  * slice, and block.
  *
  * Note: the analyzer does not require a reference for the since it only
- * enumerates metadata and doesnt attempt to dereference the reads.
+ * enumerates metadata and doesn't attempt to dereference the reads.
  */
 public class CRAMAnalyzer extends SAMAnalyzer {
 
@@ -90,6 +91,8 @@ public class CRAMAnalyzer extends SAMAnalyzer {
                 sliceCount +
                 (slice.sequenceId == Slice.MULTI_REFERENCE ? " Multi" : " Single") +
                 " reference ");
+        emit("MD5: ");
+        emitln(String.format("%032x", new BigInteger(1, slice.refMD5)));
         emitln(slice.toString());
         emitln("Header block: " +
                 slice.headerBlock);
