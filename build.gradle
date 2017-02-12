@@ -1,12 +1,23 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter() // for shadow plugin
+    }
+}
+
+plugins {
+    id "java"
+    id "com.github.johnrengelman.shadow" version "1.2.3"
+}
+
 group 'SAMDescribe'
 version '1.0-SNAPSHOT'
-
-apply plugin: 'java'
 
 sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 configurations {
@@ -15,22 +26,22 @@ configurations {
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.11'
-    includeInJar 'com.github.samtools:htsjdk:2.2.4'
-    configurations.compile.extendsFrom(configurations.includeInJar)
+    compile 'com.github.samtools:htsjdk:2.8.1'
+//    includeInJar 'com.github.samtools:htsjdk:2.8.1'
+    testCompile 'org.testng:testng:6.9.6'
 }
 
 jar {
   manifest {
     attributes(
-      'Main-Class': 'SAMDescribe.SAMAnalyzer',
+      'Main-Class': 'SAMAnalyzer.SAMDescribe',
       'Class-Path': configurations.compile.collect { it.getName() }.join(' '))
   }
-  // import all dependencies into the Jar so that it can be run easily
-  from {
-    configurations.includeInJar.collect {
-      it.isDirectory() ? it : zipTree(it)
-    }
-  }
+//  // import all dependencies into the Jar so that it can be run easily
+//  from {
+//    configurations.includeInJar.collect {
+//      it.isDirectory() ? it : zipTree(it)
+//    }
+//  }
 }
 
