@@ -3,6 +3,7 @@ package SAMAnalyzer;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.cram.build.CramIO;
+import htsjdk.samtools.cram.ref.ReferenceContext;
 import htsjdk.samtools.cram.structure.*;
 import htsjdk.samtools.util.RuntimeIOException;
 
@@ -52,13 +53,7 @@ public class CRAMAnalyzer extends SAMAnalyzer {
      *
      */
     public CramHeader analyzeCRAMHeader(InputStream is) {
-        CramHeader cramHeader = null;
-        try {
-            cramHeader = CramIO.readCramHeader(is);
-        }
-        catch (IOException e) {
-            throw new RuntimeIOException(e);
-        }
+        CramHeader cramHeader = CramIO.readCramHeader(is);
         emitln("\nAnaylzing CRAM file: " + fileName);
         emitln("CRAM Version: " + cramHeader.getVersion().toString());
 
@@ -89,7 +84,7 @@ public class CRAMAnalyzer extends SAMAnalyzer {
     public void analyzeCRAMSlice(Slice slice, int sliceCount) {
         emit("Slice #" +
                 sliceCount +
-                (slice.sequenceId == Slice.MULTI_REFERENCE ? " Multi" : " Single") +
+                (slice.getReferenceContext() == ReferenceContext.MULTIPLE_REFERENCE_CONTEXT? " Multi" : " Single") +
                 " reference ");
         emit("MD5: ");
         emitln(String.format("%032x", new BigInteger(1, slice.refMD5)));
