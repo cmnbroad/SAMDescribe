@@ -1,11 +1,11 @@
-package SAMAnalyzer;
+package HTSDescribe;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.File;
 
-public class SAMDescribeTest {
+public class HTSDescribeTest {
 
     public String getTestDataDir() { return "src/test/resources/"; }
 
@@ -19,7 +19,7 @@ public class SAMDescribeTest {
 
     @Test(dataProvider="cramFiles")
     public void testAnalyze(File inputFile) {
-        SAMDescribe.main(
-                new String[] { inputFile.getAbsolutePath() });
+        HTSDescribe.main(
+                new String[] { "--targetPath", inputFile.getAbsolutePath() });
     }
 }

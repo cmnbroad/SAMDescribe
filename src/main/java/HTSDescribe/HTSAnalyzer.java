@@ -1,15 +1,15 @@
-package SAMAnalyzer;
+package HTSDescribe;
 
 import htsjdk.samtools.util.Log;
 
 /**
  * Base class for alignment file analyzers.
  */
-public abstract class SAMAnalyzer {
+public abstract class HTSAnalyzer {
 
     protected String fileName;
 
-    public SAMAnalyzer(String fileName) {
+    public HTSAnalyzer(String fileName) {
         this.fileName = fileName;
     }
 

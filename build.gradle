@@ -27,7 +27,7 @@ configurations {
 
 dependencies {
     compile 'com.github.samtools:htsjdk:2.19.0'
-//    includeInJar 'com.github.samtools:htsjdk:2.8.1'
+    compile 'org.broadinstitute:barclay:2.1.0'
     testCompile 'org.testng:testng:6.9.6'
 }
 
@@ -37,11 +37,12 @@ jar {
       'Main-Class': 'SAMAnalyzer.SAMDescribe',
       'Class-Path': configurations.compile.collect { it.getName() }.join(' '))
   }
-//  // import all dependencies into the Jar so that it can be run easily
-//  from {
-//    configurations.includeInJar.collect {
-//      it.isDirectory() ? it : zipTree(it)
-//    }
-//  }
+
+  // import all dependencies into the Jar so that it can be run easily
+  from {
+    configurations.includeInJar.collect {
+      it.isDirectory() ? it : zipTree(it)
+    }
+  }
 }
 
