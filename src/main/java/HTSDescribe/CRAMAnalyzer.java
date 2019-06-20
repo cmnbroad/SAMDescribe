@@ -1,4 +1,4 @@
-package SAMAnalyzer;
+package HTSDescribe;
 
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMSequenceDictionary;
@@ -20,7 +20,7 @@ import java.math.BigInteger;
  * Note: the analyzer does not require a reference for the since it only
  * enumerates metadata and doesn't attempt to dereference the reads.
  */
-public class CRAMAnalyzer extends SAMAnalyzer {
+public class CRAMAnalyzer extends HTSAnalyzer {
 
     int recordCount = 0;
 
@@ -34,7 +34,7 @@ public class CRAMAnalyzer extends SAMAnalyzer {
     protected void doAnalysis() {
         int containerCount = 0;
         try (InputStream is = new BufferedInputStream(new FileInputStream(this.fileName))) {
-            CramHeader cramHeader = analyzeCRAMHeader(is);
+            final CramHeader cramHeader = analyzeCRAMHeader(is);
             Container container = null;
             while ((container = ContainerIO.readContainer(cramHeader.getVersion(), is)) != null &&
                     !container.isEOF()) {
@@ -53,13 +53,13 @@ public class CRAMAnalyzer extends SAMAnalyzer {
      *
      */
     public CramHeader analyzeCRAMHeader(InputStream is) {
-        CramHeader cramHeader = CramIO.readCramHeader(is);
+        final CramHeader cramHeader = CramIO.readCramHeader(is);
         emitln("\nAnaylzing CRAM file: " + fileName);
         emitln("CRAM Version: " + cramHeader.getVersion().toString());
 
-        SAMFileHeader samHeader = cramHeader.getSamFileHeader();
+        final SAMFileHeader samHeader = cramHeader.getSamFileHeader();
         emitln("\n" + samHeader.toString());
-        SAMSequenceDictionary dict = samHeader.getSequenceDictionary();
+        final SAMSequenceDictionary dict = samHeader.getSequenceDictionary();
         emitln(dict.toString());
         dict.getSequences().forEach(e -> emitln(e.toString()));
         return cramHeader;
@@ -72,7 +72,7 @@ public class CRAMAnalyzer extends SAMAnalyzer {
     public void analyzeCRAMContainer(Container container, int containerCount) {
         emitln("\nContainer #" + containerCount + ": " + container.toString());
         int sliceCount = 0;
-        for (Slice slice : container.slices) {
+        for (final Slice slice : container.slices) {
             analyzeCRAMSlice(slice, ++sliceCount);
         }
     }
