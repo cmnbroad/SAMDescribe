@@ -29,9 +29,9 @@ public class HTSDescribe extends CommandLineProgram {
         return 0; // TODO: fix this
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] args) {
         final HTSDescribe htsDescribe = new HTSDescribe();
-        htsDescribe.parseArgs(argv);
+        htsDescribe.parseArgs(args);
         htsDescribe.doWork();
     }
 }

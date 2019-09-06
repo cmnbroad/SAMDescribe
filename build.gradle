@@ -26,7 +26,7 @@ configurations {
 }
 
 dependencies {
-    compile 'com.github.samtools:htsjdk:2.19.0'
+    compile 'com.github.samtools:htsjdk:2.20.1-43-g81dbc22-SNAPSHOT'
     compile 'org.broadinstitute:barclay:2.1.0'
     testCompile 'org.testng:testng:6.9.6'
 }
