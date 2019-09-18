@@ -148,6 +148,7 @@ public class CRAMAnalyzer extends HTSAnalyzer {
      *
      */
     public void analyzeCRAMSlice(final Slice slice, final int sliceCount) {
+        //TODO: add CRC display
         emitln(String.format(
                 "\n******Slice #: %d Reference Context: %s MD5: %032x",
                     sliceCount,
@@ -155,7 +156,6 @@ public class CRAMAnalyzer extends HTSAnalyzer {
                         " Multi" :
                         " Single",
                     new BigInteger(1, slice.getRefMD5())));
-        //TODO: can no longer get the slice header block from the slice
         emitln(String.format("%-50s %s",
                 "Header block ",
                 slice.getSliceHeaderBlock()));
