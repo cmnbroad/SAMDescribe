@@ -3,10 +3,8 @@ package HTSDescribe;
 import htsjdk.samtools.CRAMCRAIIndexer;
 import htsjdk.samtools.cram.CRAIIndex;
 
-import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * Analyzer for CRAM (.crai) index files.

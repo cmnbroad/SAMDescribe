@@ -5,7 +5,6 @@ import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.cram.build.CramIO;
 import htsjdk.samtools.cram.encoding.CRAMEncoding;
 import htsjdk.samtools.cram.encoding.EncodingFactory;
-import htsjdk.samtools.cram.ref.ReferenceContext;
 import htsjdk.samtools.cram.structure.*;
 import htsjdk.samtools.cram.structure.block.Block;
 import htsjdk.samtools.seekablestream.SeekableFileStream;
@@ -14,7 +13,7 @@ import htsjdk.samtools.util.RuntimeIOException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
+import java.util.Base64;
 import java.util.Map;
 
 /**
@@ -64,9 +63,9 @@ public class CRAMAnalyzer extends HTSAnalyzer {
         final CramHeader cramHeader = CramIO.readCramHeader(is);
         emitln("\nCRAM File: " + fileName);
         emitln("CRAM Version: " + cramHeader.getVersion().toString());
-        emitln("CRAM ID Contents: " + String.format("%b", cramHeader.getId()));
+        emitln("CRAM ID Contents: " + String.format("%s", Base64.getEncoder().encodeToString(cramHeader.getId())));
 
-        final SAMFileHeader samHeader = cramHeader.getSamFileHeader();
+        final SAMFileHeader samHeader = Container.getSAMFileHeaderContainer(cramHeader.getVersion(), is, fileName);
         emitln("\n" + samHeader.toString());
         final SAMSequenceDictionary dict = samHeader.getSequenceDictionary();
         emitln(dict.toString());
@@ -79,7 +78,10 @@ public class CRAMAnalyzer extends HTSAnalyzer {
      * return true if container is EOF container
      */
     public boolean analyzeContainer(Container container, int containerCount) {
-        emitln("\n***Container #" + containerCount + ": " + container.toString());
+        final ContainerHeader containerHeader = container.getContainerHeader();
+        emitln(String.format(
+                "\n***Container #:%d %s byteOffset=%d",
+                containerCount, containerHeader.toString(), container.getContainerByteOffset()));
         if (container.isEOF()) {
             return true;
         }
@@ -103,9 +105,9 @@ public class CRAMAnalyzer extends HTSAnalyzer {
         //    public SubstitutionMatrix substitutionMatrix;
         //    public byte[][][] dictionary;
         emitln(String.format(
-                "Requires reference (no access); Include read names (%b); APDelta (%b)",
-                    compressionHeader.readNamesIncluded,
-                    compressionHeader.isCoordinateSorted()));
+                "Requires reference (no access); Preserved read names (%b); APDelta (%b)",
+                    compressionHeader.isPreserveReadNames(),
+                    compressionHeader.isAPDelta()));
     }
 
     public void  analyzeDataSeriesEncodingMap(final CompressionHeader compressionHeader) {
@@ -132,7 +134,7 @@ public class CRAMAnalyzer extends HTSAnalyzer {
 
     public void analyzeTagEncodingMap(final CompressionHeader compressionHeader) {
         emitln("\nTag Encodings:");
-        for (final Map.Entry<Integer, EncodingDescriptor> entry : compressionHeader.tMap.entrySet()) {
+        for (final Map.Entry<Integer, EncodingDescriptor> entry : compressionHeader.gettMap().entrySet()) {
             final Integer contentID = entry.getKey(); // is this content ID ?
             final EncodingDescriptor ep = entry.getValue();
             emitln(String.format("%-50s %s",
@@ -148,14 +150,9 @@ public class CRAMAnalyzer extends HTSAnalyzer {
      *
      */
     public void analyzeCRAMSlice(final Slice slice, final int sliceCount) {
-        //TODO: add CRC display
-        emitln(String.format(
-                "\n******Slice #: %d Reference Context: %s MD5: %032x",
-                    sliceCount,
-                    slice.getReferenceContext() == ReferenceContext.MULTIPLE_REFERENCE_CONTEXT ?
-                        " Multi" :
-                        " Single",
-                    new BigInteger(1, slice.getRefMD5())));
+        emitln(String.format("\n******Slice #: %d %s",
+                sliceCount,
+                slice.toString()));
         emitln(String.format("%-50s %s",
                 "Header block ",
                 slice.getSliceHeaderBlock()));

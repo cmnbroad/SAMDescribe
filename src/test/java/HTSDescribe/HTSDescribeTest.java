@@ -12,7 +12,8 @@ public class HTSDescribeTest {
     @DataProvider(name = "cramFiles")
     public Object[][] getSerializationTestData() {
         return new Object[][]{
-                {new File(getTestDataDir(), "valid.cram")},
+                {new File("jonn.samtools.cram")},
+                //{new File(getTestDataDir(), "valid.cram")},
                 //{new File("/Users/cmn/projects/hellbender/src/test/resources/large/CEUTrio.HiSeq.WGS.b37.NA12878.20.21.cram")}
         };
     }
@@ -20,6 +21,6 @@ public class HTSDescribeTest {
     @Test(dataProvider="cramFiles")
     public void testAnalyze(File inputFile) {
         HTSDescribe.main(
-                new String[] { "--targetPath", inputFile.getAbsolutePath() });
+                new String[] { "--target-path", inputFile.getAbsolutePath() });
     }
 }

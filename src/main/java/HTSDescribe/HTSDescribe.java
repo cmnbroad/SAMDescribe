@@ -9,7 +9,7 @@ import org.broadinstitute.barclay.argparser.Argument;
  */
 public class HTSDescribe extends CommandLineProgram {
 
-    @Argument(shortName="targetPath", fullName="targetPath",
+    @Argument(shortName="target-path", fullName="target-path",
             doc="Path to file to be analyzed",
             optional=false)
     private String targetPath;
