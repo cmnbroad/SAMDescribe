@@ -12,9 +12,8 @@ public class HTSDescribeTest {
     @DataProvider(name = "cramFiles")
     public Object[][] getSerializationTestData() {
         return new Object[][]{
-                {new File("jonn.samtools.cram")},
                 //{new File(getTestDataDir(), "valid.cram")},
-                //{new File("/Users/cmn/projects/hellbender/src/test/resources/large/CEUTrio.HiSeq.WGS.b37.NA12878.20.21.cram")}
+                {new File("/Users/cnorman/projects/gatk/src/test/resources/large/CEUTrio.HiSeq.WGS.b37.NA12878.20.21.cram")}
         };
     }
 

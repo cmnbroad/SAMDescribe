@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -25,7 +26,11 @@ import java.util.Map;
  */
 public class CRAMAnalyzer extends HTSAnalyzer {
 
-    int recordCount = 0;
+    final Map<Integer, DataSeries> dataSeriesContentIDs = new HashMap<>();
+    final Map<DataSeries, Long> dataSeriesDataSizes = new HashMap<>();
+    final Map<Integer, Long> externalDataSizes = new HashMap<>();
+    long recordCount = 0;
+    long coreBlocksSize = 0L;
 
     public CRAMAnalyzer(String fileName) {
         super(fileName);
@@ -35,6 +40,12 @@ public class CRAMAnalyzer extends HTSAnalyzer {
      * Run the analyzer for the file.
      */
     protected void doAnalysis() {
+        // initialize reverse lookup of DataSeries by contentID so we can track the distribution of
+        // data across allDataSeries
+        for (final DataSeries dataSeries: DataSeries.values()) {
+            dataSeriesContentIDs.put(dataSeries.getExternalBlockContentId(), dataSeries);
+        }
+
         int containerCount = 0;
         try (final SeekableFileStream seekableStream = new SeekableFileStream(new File(this.fileName))) {
             final CramHeader cramHeader = analyzeCRAMHeader(seekableStream);
@@ -53,6 +64,7 @@ public class CRAMAnalyzer extends HTSAnalyzer {
         }
 
         emitln("\nTotal Record Count: " + recordCount);
+        emitDataDistribution();
     }
 
     /**
@@ -101,11 +113,9 @@ public class CRAMAnalyzer extends HTSAnalyzer {
     }
 
     public void analyzePreservationMap(final CompressionHeader compressionHeader) {
-        //    public Map<Integer, EncodingParams> tMap;
-        //    public SubstitutionMatrix substitutionMatrix;
-        //    public byte[][][] dictionary;
         emitln(String.format(
-                "Requires reference (no access); Preserved read names (%b); APDelta (%b)",
+                "Requires reference (%b); Preserved read names (%b); APDelta (%b)",
+                    compressionHeader.isReferenceRequired(),
                     compressionHeader.isPreserveReadNames(),
                     compressionHeader.isAPDelta()));
     }
@@ -134,7 +144,7 @@ public class CRAMAnalyzer extends HTSAnalyzer {
 
     public void analyzeTagEncodingMap(final CompressionHeader compressionHeader) {
         emitln("\nTag Encodings:");
-        for (final Map.Entry<Integer, EncodingDescriptor> entry : compressionHeader.gettMap().entrySet()) {
+        for (final Map.Entry<Integer, EncodingDescriptor> entry : compressionHeader.getTagEncodingMap().entrySet()) {
             final Integer contentID = entry.getKey(); // is this content ID ?
             final EncodingDescriptor ep = entry.getValue();
             emitln(String.format("%-50s %s",
@@ -159,17 +169,59 @@ public class CRAMAnalyzer extends HTSAnalyzer {
         emitln(String.format("%-50s %s",
                 "Core block ",
                 slice.getSliceBlocks().getCoreBlock()));
+        if (slice.getEmbeddedReferenceContentID() != Slice.EMBEDDED_REFERENCE_ABSENT_CONTENT_ID) {
+            emitln(String.format("Embedded reference block ID %d", slice.getEmbeddedReferenceContentID()));
+        }
         slice.getSliceBlocks().getExternalContentIDs().forEach((id) -> emitln(
                 String.format("%-50s %s",
                         String.format("External Block (%s):", dataSeriesNameFromContentID(id)),
                         slice.getSliceBlocks().getExternalBlock(id).toString())));
         recordCount += slice.getNumberOfRecords();
+
+        updateDataDistribution(slice);
+    }
+
+    final void updateDataDistribution(final Slice slice) {
+        coreBlocksSize += slice.getSliceBlocks().getCoreBlock().getCompressedContentSize();
+        for (final Integer contentID : slice.getSliceBlocks().getExternalContentIDs()) {
+            if (dataSeriesContentIDs.containsKey(contentID)) {
+                // if its a fixed DataSeries ID
+                dataSeriesDataSizes.merge(
+                        dataSeriesContentIDs.get(contentID),
+                        new Long(slice.getSliceBlocks().getExternalBlock(contentID).getCompressedContentSize()),
+                        (oldValue, increment) -> oldValue + increment);
+            } else {
+                // it must be a tag data series
+                externalDataSizes.merge(
+                        contentID,
+                        new Long(slice.getSliceBlocks().getExternalBlock(contentID).getCompressedContentSize()),
+                        (oldValue, increment) -> oldValue + increment);
+            }
+        }
+    }
+
+    public void emitDataDistribution() {
+        emitln("\nData Series Data Distribution (block resolution):");
+        emitln("Core Blocks: " + String.format("%,d", coreBlocksSize));
+        for (final DataSeries ds : DataSeries.values()) {
+            emitln(ds + " : " + String.format("%,d", dataSeriesDataSizes.get(ds)));
+        }
+
+        emitln("\nTag Series Distribution:");
+        for (final Map.Entry<Integer, Long> externalEntry : externalDataSizes.entrySet()) {
+            if (externalEntry.getKey() != 0L) {
+                // external blocks should not have ID 0, but some implementations emit them...
+                final Integer contentID = externalEntry.getKey();
+                final String seriesName = contentID == 0L ? "ID 0" : decomposeTagNameAndType(externalEntry.getKey());
+                emitln( seriesName + " : " + String.format("%,d", externalEntry.getValue()));
+            }
+        }
     }
 
     // Find a DataSeries that uses the provided content ID, otherwise return Block.NO_CONTENT_ID
     private String dataSeriesNameFromContentID(final Integer contentID) {
         if (contentID == Block.NO_CONTENT_ID) {
-            return String.format("%d (NO_CONTENT_ID)", Block.NO_CONTENT_ID);
+            return String.format("NO_CONTENT_ID");
         }
         for (final DataSeries ds : DataSeries.values()) {
             if (ds.getExternalBlockContentId() == contentID) {
@@ -192,9 +244,6 @@ public class CRAMAnalyzer extends HTSAnalyzer {
 
     private String decomposeTagNameAndType(final int contentID) {
         return ReadTag.intToNameType4Bytes(contentID);
-//        return String.format("%s(%s)",
-//                tagString.substring(0, 2),
-//                tagString.substring(2, 3));
     }
 
 }
