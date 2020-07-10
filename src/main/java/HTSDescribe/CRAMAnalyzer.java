@@ -190,15 +190,12 @@ public class CRAMAnalyzer extends HTSAnalyzer {
         }
 
         slice.getSliceBlocks().getExternalContentIDs().forEach((id) -> {
-            final Block block = slice.getSliceBlocks().getExternalBlock(id);
-            final String inflatedContent = block.getCompressedContentSize() >= block.getUncompressedContentSize() ?
-                    "***Inflated***" :
-                    "";
-            emitln(
-                    String.format("%s%-50s %s",
-                            inflatedContent,
-                            String.format("External Block (%s):", dataSeriesByContentID.get(id)),
-                            slice.getSliceBlocks().getExternalBlock(id).toString()));
+            final String blockID = dataSeriesByContentID.get(id) == null ?
+                    Integer.toString(id) : // not a fixed data series (i.e., tag block)
+                    dataSeriesByContentID.get(id).getCanonicalName();
+            emitln(String.format("%-50s %s",
+                    String.format("External Block (%s):", blockID),
+                    slice.getSliceBlocks().getExternalBlock(id).toString()));
         });
 
         updateDataDistribution(slice, dataSeriesByContentID);
@@ -211,7 +208,9 @@ public class CRAMAnalyzer extends HTSAnalyzer {
         coreBlocksDataSize += sliceBlocks.getCoreBlock().getCompressedContentSize();
         final Map<Integer, EncodingDescriptor> tagContentIDs = slice.getCompressionHeader().getTagEncodingMap();
         for (final Integer contentID : sliceBlocks.getExternalContentIDs()) {
-            if (tagContentIDs.containsKey(contentID)) {
+            //if (tagContentIDs.containsKey(contentID)) {
+            final DataSeries ds = dataSeriesByContentID.get(contentID);
+            if (ds == null) {
                 // accrue to tag data
                 externalTagDataSizes.merge(
                         contentID,
@@ -220,7 +219,7 @@ public class CRAMAnalyzer extends HTSAnalyzer {
             } else {
                 // accrue to fixed DataSeries ID
                 externalDataSeriesDataSizes.merge(
-                        dataSeriesByContentID.get(contentID),
+                        ds,
                         new Long(sliceBlocks.getExternalBlock(contentID).getCompressedContentSize()),
                         (oldValue, increment) -> oldValue + increment);
             }
@@ -237,8 +236,8 @@ public class CRAMAnalyzer extends HTSAnalyzer {
         emitln("\nTag Series Distribution:\n");
         for (final Map.Entry<Integer, Long> externalEntry : externalTagDataSizes.entrySet()) {
             final Integer contentID = externalEntry.getKey();
-            final String seriesName = contentID == 0L ? "ID 0" : decomposeTagNameAndType(externalEntry.getKey());
-            emitln(String.format("%s: %,d", seriesName, externalEntry.getValue()));
+            final String tagName = String.format("%d (%s)", contentID, decomposeTagNameAndType(externalEntry.getKey()));
+            emitln(String.format("%s: %,d", tagName, externalEntry.getValue()));
         }
     }
 
