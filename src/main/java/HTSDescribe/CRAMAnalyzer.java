@@ -209,18 +209,19 @@ public class CRAMAnalyzer extends HTSAnalyzer {
         final SliceBlocks sliceBlocks = slice.getSliceBlocks();
 
         coreBlocksDataSize += sliceBlocks.getCoreBlock().getCompressedContentSize();
+        final Map<Integer, EncodingDescriptor> tagContentIDs = slice.getCompressionHeader().getTagEncodingMap();
         for (final Integer contentID : sliceBlocks.getExternalContentIDs()) {
-            if (dataSeriesByContentID.containsKey(contentID)) {
-                // if its a fixed DataSeries ID
-                externalDataSeriesDataSizes.merge(
-                        dataSeriesByContentID.get(contentID),
-                        new Long(sliceBlocks.getExternalBlock(contentID).getCompressedContentSize()),
-                        (oldValue, increment) -> oldValue + increment);
-            } else {
-                // it must be a tag data series
+            if (tagContentIDs.containsKey(contentID)) {
+                // accrue to tag data
                 externalTagDataSizes.merge(
                         contentID,
                         new Long(slice.getSliceBlocks().getExternalBlock(contentID).getCompressedContentSize()),
+                        (oldValue, increment) -> oldValue + increment);
+            } else {
+                // accrue to fixed DataSeries ID
+                externalDataSeriesDataSizes.merge(
+                        dataSeriesByContentID.get(contentID),
+                        new Long(sliceBlocks.getExternalBlock(contentID).getCompressedContentSize()),
                         (oldValue, increment) -> oldValue + increment);
             }
         }
